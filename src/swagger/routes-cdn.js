@@ -7,7 +7,7 @@ const router = express.Router();
 
 /**
  * GET /api-docs
- * Endpoint principal de documentación Swagger usando CDN
+ * Endpoint principal de documentación Swagger usando especificación embebida
  * Soluciona problemas de archivos estáticos con proxy reverso
  */
 router.get('/',
@@ -71,17 +71,18 @@ router.get('/',
               // Detectar la URL base del proxy reverso
               const currentPath = window.location.pathname;
               const basePath = currentPath.replace('/api-docs', '');
-              const specUrl = basePath + '/api-docs/json';
               
               console.log('Swagger UI Config:', {
                 currentPath: currentPath,
                 basePath: basePath,
-                specUrl: specUrl,
                 windowLocation: window.location.href
               });
               
+              // Especificación OpenAPI embebida directamente
+              const spec = ${JSON.stringify(swaggerSpec)};
+              
               const ui = SwaggerUIBundle({
-                url: specUrl,
+                spec: spec,
                 dom_id: '#swagger-ui',
                 deepLinking: true,
                 presets: [
