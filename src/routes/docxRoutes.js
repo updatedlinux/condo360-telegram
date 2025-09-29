@@ -149,7 +149,6 @@ const handleMulterError = (error, req, res, next) => {
  * - created_by: identificador del usuario que crea el post (opcional)
  * 
  * Headers:
- * - X-API-KEY: clave API para autenticación (requerido)
  * - Content-Type: multipart/form-data
  */
 router.post('/upload',
@@ -184,7 +183,7 @@ router.post('/upload',
  * - delete_media: 'true' o 'false' para eliminar medios asociados (opcional, por defecto 'false')
  * 
  * Headers:
- * - X-API-KEY: clave API para autenticación (requerido)
+ * - Content-Type: application/json
  */
 router.delete('/posts/:wp_post_id',
   // Middlewares de seguridad y autenticación
@@ -210,7 +209,7 @@ router.delete('/posts/:wp_post_id',
  * - history_id: ID del registro de historial (requerido)
  * 
  * Headers:
- * - X-API-KEY: clave API para autenticación (requerido)
+ * - Content-Type: application/json
  */
 router.get('/posts/history/:history_id',
   // Middlewares de seguridad y autenticación
@@ -240,7 +239,7 @@ router.get('/posts/history/:history_id',
  * - limit: cantidad de registros por página (opcional, por defecto 20, máximo 100)
  * 
  * Headers:
- * - X-API-KEY: clave API para autenticación (requerido)
+ * - Content-Type: application/json
  */
 router.get('/posts/history',
   // Middlewares de seguridad y autenticación

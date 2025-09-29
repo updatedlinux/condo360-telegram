@@ -3,49 +3,17 @@ const logger = require('../config/logger');
 const config = require('../config');
 
 /**
- * Middleware de autenticación usando API Key
- * Valida el header X-API-KEY contra la clave configurada
+ * Middleware de autenticación (deshabilitado - API abierta)
+ * Este middleware ahora solo registra el acceso sin validar API Key
  */
 const authenticateApiKey = (req, res, next) => {
   const traceId = uuidv4();
   req.traceId = traceId;
 
   try {
-    const apiKey = req.headers['x-api-key'];
-    
-    if (!apiKey) {
-      logger.logWithTrace(traceId, 'warn', 'Intento de acceso sin API Key', {
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
-        path: req.path
-      });
-
-      return res.status(401).json({
-        success: false,
-        error: 'API Key requerida',
-        message: 'Debe proporcionar una API Key válida en el header X-API-KEY',
-        traceId
-      });
-    }
-
-    if (apiKey !== config.security.adminApiKey) {
-      logger.logWithTrace(traceId, 'warn', 'Intento de acceso con API Key inválida', {
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
-        path: req.path,
-        providedKey: apiKey.substring(0, 8) + '...' // Solo mostrar primeros 8 caracteres por seguridad
-      });
-
-      return res.status(403).json({
-        success: false,
-        error: 'API Key inválida',
-        message: 'La API Key proporcionada no es válida',
-        traceId
-      });
-    }
-
-    logger.logWithTrace(traceId, 'info', 'Autenticación exitosa con API Key', {
+    logger.logWithTrace(traceId, 'info', 'Acceso a endpoint público', {
       ip: req.ip,
+      userAgent: req.get('User-Agent'),
       path: req.path
     });
 

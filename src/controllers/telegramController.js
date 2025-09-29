@@ -287,8 +287,7 @@ class TelegramController {
    *       Este endpoint debe ser llamado una vez para configurar el bot.
    *       
    *       **Nota:** Requiere permisos de administrador y configuración válida de Telegram.
-   *     security:
-   *       - ApiKeyAuth: []
+     *     security: []
    *     requestBody:
    *       required: true
    *       content:
@@ -348,7 +347,7 @@ class TelegramController {
    *               message: "URL de webhook inválida"
    *               traceId: "550e8400-e29b-41d4-a716-446655440000"
    *       401:
-   *         description: API Key no proporcionada o inválida
+   *         description: Error en la validación de parámetros
    *         content:
    *           application/json:
    *             schema:
@@ -451,8 +450,7 @@ class TelegramController {
    *     description: |
    *       Obtiene información sobre el webhook configurado en Telegram.
    *       Útil para verificar el estado y configuración del webhook.
-   *     security:
-   *       - ApiKeyAuth: []
+     *     security: []
    *     responses:
    *       200:
    *         description: Información del webhook obtenida exitosamente
@@ -485,7 +483,7 @@ class TelegramController {
    *               message: "El servicio de Telegram no está habilitado"
    *               traceId: "550e8400-e29b-41d4-a716-446655440000"
    *       401:
-   *         description: API Key no proporcionada o inválida
+   *         description: Error en la validación de parámetros
    *         content:
    *           application/json:
    *             schema:

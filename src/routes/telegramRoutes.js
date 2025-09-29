@@ -41,7 +41,7 @@ router.post('/webhook',
  * con la URL del webhook donde recibir los updates.
  * 
  * Headers requeridos:
- * - X-API-KEY: Clave API para autenticación
+ * - Content-Type: application/json
  * 
  * Body (JSON):
  * - webhook_url: URL del webhook (requerido)
@@ -67,7 +67,7 @@ router.post('/set-webhook',
  * Útil para verificar el estado y configuración del webhook configurado.
  * 
  * Headers requeridos:
- * - X-API-KEY: Clave API para autenticación
+ * - Content-Type: application/json
  */
 router.get('/webhook-info',
   // Middlewares de seguridad y autenticación

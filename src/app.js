@@ -54,13 +54,13 @@ app.use(helmet({
 }));
 
 /**
- * Configurar CORS
+ * Configurar CORS - Acceso libre desde cualquier origen
  */
 app.use(cors({
-  origin: config.security.corsOrigins,
+  origin: '*', // Permitir acceso desde cualquier origen
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-KEY', 'X-Telegram-Secret'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Telegram-Secret'],
+  credentials: false // No necesario para API abierta
 }));
 
 /**

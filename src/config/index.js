@@ -12,8 +12,7 @@ const requiredEnvVars = [
   'DB_HOST',
   'DB_USER',
   'DB_PASSWORD',
-  'DB_NAME',
-  'ADMIN_API_KEY'
+  'DB_NAME'
 ];
 
 // Validar variables de entorno requeridas
@@ -90,10 +89,9 @@ const config = {
 
   // Configuración de seguridad
   security: {
-    adminApiKey: process.env.ADMIN_API_KEY,
     rateLimitWindowMs: 15 * 60 * 1000, // 15 minutos
     rateLimitMax: 100, // máximo 100 requests por ventana
-    corsOrigins: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['*']
+    corsOrigins: ['*'] // Permitir acceso desde cualquier origen
   },
 
   // Configuración de Swagger

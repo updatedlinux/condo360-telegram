@@ -11,7 +11,7 @@ Backend en Node.js (Express) que automatiza la creación y eliminación de posts
 - **Trazabilidad completa**: Registro de todas las operaciones en base de datos MySQL
 - **Documentación Swagger**: API documentada completamente en español
 - **Logging avanzado**: Winston con rotación diaria y zona horaria GMT-4
-- **Seguridad robusta**: Autenticación por API Key, rate limiting y validaciones
+- **Seguridad robusta**: Rate limiting, validaciones y sanitización de inputs
 - **Tests completos**: Suite de tests unitarios, de integración y end-to-end
 
 ## 📋 Requisitos
@@ -136,7 +136,6 @@ Subir archivo .docx y crear post en WordPress.
 
 **Headers requeridos:**
 ```
-X-API-KEY: tu_clave_api
 Content-Type: multipart/form-data
 ```
 
@@ -149,7 +148,6 @@ Content-Type: multipart/form-data
 **Ejemplo con curl:**
 ```bash
 curl -X POST "http://localhost:6000/api/v1/docx/upload" \
-  -H "X-API-KEY: tu_clave_api" \
   -F "file=@./documento.docx" \
   -F "title=Mi Documento Importante" \
   -F "status=draft" \
@@ -163,7 +161,7 @@ Eliminar post de WordPress y opcionalmente sus medios asociados.
 
 **Headers requeridos:**
 ```
-X-API-KEY: tu_clave_api
+Content-Type: application/json
 ```
 
 **Parámetros de consulta:**
@@ -171,8 +169,7 @@ X-API-KEY: tu_clave_api
 
 **Ejemplo con curl:**
 ```bash
-curl -X DELETE "http://localhost:6000/api/v1/posts/123?delete_media=true" \
-  -H "X-API-KEY: tu_clave_api"
+curl -X DELETE "http://localhost:6000/api/v1/posts/123?delete_media=true"
 ```
 
 ### Historial
@@ -223,7 +220,6 @@ Verificación simple de salud para load balancers.
 
 ```bash
 curl -X POST "http://localhost:6000/api/v1/telegram/set-webhook" \
-  -H "X-API-KEY: tu_clave_api" \
   -H "Content-Type: application/json" \
   -d '{
     "webhook_url": "https://tu-dominio.com/api/v1/telegram/webhook",
@@ -326,12 +322,16 @@ npm test -- --coverage
 - Lines: 70%
 - Statements: 70%
 
-## 🔒 Seguridad
+## 🔓 API Abierta
 
-### Autenticación
+Esta API está configurada como **completamente abierta** sin autenticación por API Key. Todos los endpoints son accesibles públicamente con CORS habilitado para cualquier origen.
 
-- **API Key**: Header `X-API-KEY` para endpoints protegidos
-- **Telegram Webhook**: Header `X-Telegram-Secret` para validación
+### Configuración de Seguridad
+
+- **CORS**: Habilitado para cualquier origen (`*`)
+- **Rate Limiting**: 100 requests por 15 minutos por IP
+- **Validaciones**: Sanitización de inputs y validación de archivos
+- **Telegram Webhook**: Header `X-Telegram-Secret` para validación de webhooks
 
 ### Rate Limiting
 

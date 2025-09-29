@@ -33,12 +33,6 @@ const swaggerOptions = {
     ],
     components: {
       securitySchemes: {
-        ApiKeyAuth: {
-          type: 'apiKey',
-          in: 'header',
-          name: 'X-API-KEY',
-          description: 'Clave API para autenticación. Debe proporcionarse en el header X-API-KEY.'
-        },
         TelegramWebhookAuth: {
           type: 'apiKey',
           in: 'header',

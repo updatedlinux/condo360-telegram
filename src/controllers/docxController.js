@@ -29,8 +29,7 @@ class DocxController {
    *       - Optimiza imágenes si está habilitado en la configuración
    *       - Crea registro de trazabilidad en la base de datos
    *       - Soporta posts como borrador o publicado
-   *     security:
-   *       - ApiKeyAuth: []
+     *     security: []
    *     requestBody:
    *       required: true
    *       content:
@@ -103,15 +102,15 @@ class DocxController {
    *                     maxSize: 10485760
    *                   traceId: "550e8400-e29b-41d4-a716-446655440000"
    *       401:
-   *         description: API Key no proporcionada o inválida
+   *         description: Error en la validación de parámetros
    *         content:
    *           application/json:
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    *             example:
    *               success: false
-   *               error: "API Key requerida"
-   *               message: "Debe proporcionar una API Key válida en el header X-API-KEY"
+   *               error: "Parámetros inválidos"
+   *               message: "Los parámetros proporcionados no son válidos"
    *               traceId: "550e8400-e29b-41d4-a716-446655440000"
    *       429:
    *         description: Demasiadas solicitudes (rate limit excedido)
@@ -333,8 +332,7 @@ class DocxController {
    *       - Opcionalmente elimina medios asociados registrados en el historial
    *       - Actualiza el estado del registro en el historial
    *       - Proporciona detalles de la operación realizada
-   *     security:
-   *       - ApiKeyAuth: []
+     *     security: []
    *     parameters:
    *       - in: path
    *         name: wp_post_id
@@ -415,7 +413,7 @@ class DocxController {
    *                 providedValue: "abc"
    *               traceId: "550e8400-e29b-41d4-a716-446655440000"
    *       401:
-   *         description: API Key no proporcionada o inválida
+   *         description: Error en la validación de parámetros
    *         content:
    *           application/json:
    *             schema:
@@ -596,8 +594,7 @@ class DocxController {
    *       - Información de Telegram (si aplica)
    *       - Estados de procesamiento y errores
    *       - Timestamps con zona horaria
-   *     security:
-   *       - ApiKeyAuth: []
+     *     security: []
    *     parameters:
    *       - in: path
    *         name: history_id
@@ -680,7 +677,7 @@ class DocxController {
    *                 providedValue: "abc"
    *               traceId: "550e8400-e29b-41d4-a716-446655440000"
    *       401:
-   *         description: API Key no proporcionada o inválida
+   *         description: Error en la validación de parámetros
    *         content:
    *           application/json:
    *             schema:
@@ -777,8 +774,7 @@ class DocxController {
    *       - status: Estado del procesamiento
    *       - start_date/end_date: Rango de fechas
    *       - page/limit: Paginación
-   *     security:
-   *       - ApiKeyAuth: []
+     *     security: []
    *     parameters:
    *       - in: query
    *         name: wp_post_id
@@ -960,7 +956,7 @@ class DocxController {
    *                       message: "start_date debe estar en formato ISO (YYYY-MM-DD)"
    *                   traceId: "550e8400-e29b-41d4-a716-446655440000"
    *       401:
-   *         description: API Key no proporcionada o inválida
+   *         description: Error en la validación de parámetros
    *         content:
    *           application/json:
    *             schema:
