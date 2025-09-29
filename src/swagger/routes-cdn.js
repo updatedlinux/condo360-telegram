@@ -27,14 +27,21 @@ router.get('/',
     res.setHeader('Expires', '0');
     res.setHeader('Last-Modified', new Date().toUTCString());
     
-    // Detectar la URL base automáticamente
+    // Detectar la URL base automáticamente incluyendo el prefijo del proxy reverso
     const protocol = req.get('X-Forwarded-Proto') || req.protocol;
     const host = req.get('X-Forwarded-Host') || req.get('Host');
-    const baseUrl = `${protocol}://${host}`;
+    
+    // Detectar el prefijo del proxy reverso desde la URL original
+    const originalUrl = req.originalUrl;
+    const pathPrefix = originalUrl.replace('/api-docs', '');
+    const baseUrl = `${protocol}://${host}${pathPrefix}`;
     
     logger.info('Generando documentación HTML pura sin JS', {
       baseUrl,
       originalUrl: req.originalUrl,
+      pathPrefix,
+      protocol,
+      host,
       version: '3.0',
       timestamp: new Date().toISOString()
     });
