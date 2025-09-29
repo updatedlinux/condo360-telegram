@@ -8,105 +8,67 @@ const router = express.Router();
 
 /**
  * GET /api-docs
- * Swagger UI real pero configurado para evitar requests externos
+ * Swagger UI usando el método estándar con especificación embebida
  */
 router.get('/',
   publicEndpoint,
   (req, res, next) => {
-    logger.info('Acceso a Swagger UI real', {
+    logger.info('Acceso a Swagger UI estándar', {
       ip: req.ip,
       userAgent: req.get('User-Agent'),
       traceId: req.traceId
     });
     next();
   },
-  (req, res) => {
-    // Detectar la URL base automáticamente incluyendo el prefijo del proxy reverso
-    const protocol = req.get('X-Forwarded-Proto') || req.protocol;
-    const host = req.get('X-Forwarded-Host') || req.get('Host');
-    
-    // Detectar el prefijo del proxy reverso desde la URL original
-    const originalUrl = req.originalUrl;
-    const pathPrefix = originalUrl.replace('/api-docs', '');
-    
-    // Si no hay prefijo, usar el header X-Forwarded-Prefix si está disponible
-    const forwardedPrefix = req.get('X-Forwarded-Prefix') || '';
-    const finalPrefix = pathPrefix || forwardedPrefix;
-    
-    const baseUrl = `${protocol}://${host}${finalPrefix}`;
-    
-    logger.info('Generando Swagger UI real', {
-      baseUrl,
-      originalUrl: req.originalUrl,
-      pathPrefix,
-      forwardedPrefix,
-      finalPrefix,
-      protocol,
-      host,
-      timestamp: new Date().toISOString()
-    });
-
-    // Configuración de Swagger UI para evitar requests externos
-    const swaggerUiOptions = {
-      customCss: `
-        .swagger-ui .topbar { display: none; }
-        .swagger-ui .info { margin: 20px 0; }
-        .swagger-ui .info .title { color: #2c3e50; }
-        .swagger-ui .scheme-container { background: #f8f9fa; padding: 10px; border-radius: 5px; }
-        .swagger-ui .btn.authorize { background-color: #3498db; border-color: #3498db; }
-        .swagger-ui .btn.authorize:hover { background-color: #2980b9; border-color: #2980b9; }
-        .swagger-ui .response-col_status { font-weight: bold; }
-        .swagger-ui .response-col_status-200 { color: #27ae60; }
-        .swagger-ui .response-col_status-400 { color: #e74c3c; }
-        .swagger-ui .response-col_status-401 { color: #e74c3c; }
-        .swagger-ui .response-col_status-403 { color: #e74c3c; }
-        .swagger-ui .response-col_status-404 { color: #e74c3c; }
-        .swagger-ui .response-col_status-500 { color: #e74c3c; }
-      `,
-      customSiteTitle: 'Condo360 WordPress API - Documentación',
-      customfavIcon: '/favicon.ico',
-      swaggerOptions: {
-        persistAuthorization: true,
-        displayRequestDuration: true,
-        filter: true,
-        showExtensions: true,
-        showCommonExtensions: true,
-        tryItOutEnabled: true,
-        // CRÍTICO: Usar la especificación embebida directamente
-        spec: swaggerSpec,
-        // CRÍTICO: No usar URL externa
-        url: undefined,
-        // CRÍTICO: Deshabilitar validador externo
-        validatorUrl: null,
-        // Configuración para proxy reverso
-        requestInterceptor: (req) => {
-          // Asegurar que las URLs sean relativas al proxy
-          if (req.url.startsWith('/')) {
-            req.url = finalPrefix + req.url;
-          }
-          logger.info('Request desde Swagger UI', {
-            method: req.method,
-            url: req.url,
-            originalUrl: req.originalUrl,
-            baseUrl: baseUrl
-          });
-          return req;
-        },
-        responseInterceptor: (response) => {
-          logger.info('Response desde Swagger UI', {
-            status: response.status,
-            url: response.url
-          });
-          return response;
+  swaggerUi.setup(swaggerSpec, {
+    customCss: `
+      .swagger-ui .topbar { display: none; }
+      .swagger-ui .info { margin: 20px 0; }
+      .swagger-ui .info .title { color: #2c3e50; }
+      .swagger-ui .scheme-container { background: #f8f9fa; padding: 10px; border-radius: 5px; }
+      .swagger-ui .btn.authorize { background-color: #3498db; border-color: #3498db; }
+      .swagger-ui .btn.authorize:hover { background-color: #2980b9; border-color: #2980b9; }
+      .swagger-ui .response-col_status { font-weight: bold; }
+      .swagger-ui .response-col_status-200 { color: #27ae60; }
+      .swagger-ui .response-col_status-400 { color: #e74c3c; }
+      .swagger-ui .response-col_status-401 { color: #e74c3c; }
+      .swagger-ui .response-col_status-403 { color: #e74c3c; }
+      .swagger-ui .response-col_status-404 { color: #e74c3c; }
+      .swagger-ui .response-col_status-500 { color: #e74c3c; }
+    `,
+    customSiteTitle: 'Condo360 WordPress API - Documentación',
+    customfavIcon: '/favicon.ico',
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      showExtensions: true,
+      showCommonExtensions: true,
+      tryItOutEnabled: true,
+      validatorUrl: null, // Deshabilitar validador externo
+      requestInterceptor: (req) => {
+        // Detectar el prefijo del proxy reverso
+        const originalUrl = req.originalUrl || '';
+        const pathPrefix = originalUrl.replace('/api-docs', '');
+        const forwardedPrefix = req.headers['x-forwarded-prefix'] || '';
+        const finalPrefix = pathPrefix || forwardedPrefix;
+        
+        // Asegurar que las URLs sean relativas al proxy
+        if (req.url.startsWith('/')) {
+          req.url = finalPrefix + req.url;
         }
+        
+        logger.info('Request desde Swagger UI', {
+          method: req.method,
+          url: req.url,
+          originalUrl: req.originalUrl,
+          finalPrefix: finalPrefix
+        });
+        
+        return req;
       }
-    };
-
-    // Generar HTML de Swagger UI con la especificación embebida
-    const swaggerHtml = swaggerUi.generateHTML(swaggerSpec, swaggerUiOptions);
-    
-    res.send(swaggerHtml);
-  }
+    }
+  })
 );
 
 /**

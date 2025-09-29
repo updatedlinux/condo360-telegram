@@ -117,17 +117,17 @@ app.use((req, res, next) => {
 
 /**
  * Configurar archivos estáticos para Swagger UI
- * COMENTADO: Este middleware estaba sirviendo archivos de Swagger UI que hacían requests a petstore.swagger.io
+ * Habilitado para servir CSS y JS de Swagger UI correctamente
  */
-// app.use('/api-docs', express.static('node_modules/swagger-ui-dist', {
-//   setHeaders: (res, path) => {
-//     if (path.endsWith('.css')) {
-//       res.setHeader('Content-Type', 'text/css');
-//     } else if (path.endsWith('.js')) {
-//       res.setHeader('Content-Type', 'application/javascript');
-//     }
-//   }
-// }));
+app.use('/api-docs', express.static('node_modules/swagger-ui-dist', {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    }
+  }
+}));
 
 /**
  * Configurar rutas
