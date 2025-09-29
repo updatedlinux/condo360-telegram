@@ -1,5 +1,4 @@
 const express = require('express');
-const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./index');
 const logger = require('../config/logger');
 const { publicEndpoint } = require('../middleware/auth');
@@ -7,53 +6,9 @@ const { publicEndpoint } = require('../middleware/auth');
 const router = express.Router();
 
 /**
- * Configuración personalizada de Swagger UI
- */
-const swaggerUiOptions = {
-  customCss: `
-    .swagger-ui .topbar { display: none; }
-    .swagger-ui .info { margin: 20px 0; }
-    .swagger-ui .info .title { color: #2c3e50; }
-    .swagger-ui .scheme-container { background: #f8f9fa; padding: 10px; border-radius: 5px; }
-    .swagger-ui .btn.authorize { background-color: #3498db; border-color: #3498db; }
-    .swagger-ui .btn.authorize:hover { background-color: #2980b9; border-color: #2980b9; }
-    .swagger-ui .response-col_status { font-weight: bold; }
-    .swagger-ui .response-col_status-200 { color: #27ae60; }
-    .swagger-ui .response-col_status-400 { color: #e74c3c; }
-    .swagger-ui .response-col_status-401 { color: #e74c3c; }
-    .swagger-ui .response-col_status-403 { color: #e74c3c; }
-    .swagger-ui .response-col_status-404 { color: #e74c3c; }
-    .swagger-ui .response-col_status-500 { color: #e74c3c; }
-  `,
-  customSiteTitle: 'Condo360 WordPress API - Documentación',
-  customfavIcon: '/favicon.ico',
-  // Configuración para funcionar con proxy reverso
-  swaggerOptions: {
-    persistAuthorization: true,
-    displayRequestDuration: true,
-    filter: true,
-    showExtensions: true,
-    showCommonExtensions: true,
-    tryItOutEnabled: true,
-    // Configurar URLs para proxy reverso
-    url: '/api-docs/json',
-    validatorUrl: null, // Deshabilitar validador externo
-    requestInterceptor: (req) => {
-      // Agregar información de logging para requests desde Swagger UI
-      logger.info('Request desde Swagger UI', {
-        method: req.method,
-        url: req.url,
-        headers: req.headers
-      });
-      return req;
-    }
-  }
-};
-
-/**
  * GET /api-docs
- * Endpoint principal de documentación Swagger
- * Sirve la interfaz de Swagger UI con la documentación completa
+ * Endpoint principal de documentación Swagger usando CDN
+ * Soluciona problemas de archivos estáticos con proxy reverso
  */
 router.get('/',
   publicEndpoint,
@@ -65,14 +20,72 @@ router.get('/',
     });
     next();
   },
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, swaggerUiOptions)
+  (req, res) => {
+    const swaggerHtml = `
+      <!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <title>Condo360 WordPress API - Documentación</title>
+          <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+          <style>
+            html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+            *, *:before, *:after { box-sizing: inherit; }
+            body { margin:0; background: #fafafa; }
+            .swagger-ui .topbar { display: none; }
+            .swagger-ui .info { margin: 20px 0; }
+            .swagger-ui .info .title { color: #2c3e50; }
+            .swagger-ui .scheme-container { background: #f8f9fa; padding: 10px; border-radius: 5px; }
+            .swagger-ui .btn.authorize { background-color: #3498db; border-color: #3498db; }
+            .swagger-ui .btn.authorize:hover { background-color: #2980b9; border-color: #2980b9; }
+            .swagger-ui .response-col_status { font-weight: bold; }
+            .swagger-ui .response-col_status-200 { color: #27ae60; }
+            .swagger-ui .response-col_status-400 { color: #e74c3c; }
+            .swagger-ui .response-col_status-401 { color: #e74c3c; }
+            .swagger-ui .response-col_status-403 { color: #e74c3c; }
+            .swagger-ui .response-col_status-404 { color: #e74c3c; }
+            .swagger-ui .response-col_status-500 { color: #e74c3c; }
+          </style>
+        </head>
+        <body>
+          <div id="swagger-ui"></div>
+          <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+          <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js"></script>
+          <script>
+            window.onload = function() {
+              const ui = SwaggerUIBundle({
+                url: '/api-docs/json',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                  SwaggerUIBundle.presets.apis,
+                  SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                  SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                persistAuthorization: true,
+                displayRequestDuration: true,
+                filter: true,
+                showExtensions: true,
+                showCommonExtensions: true,
+                tryItOutEnabled: true,
+                validatorUrl: null
+              });
+            };
+          </script>
+        </body>
+      </html>
+    `;
+    
+    res.send(swaggerHtml);
+  }
 );
 
 /**
- * GET /api-docs.json
+ * GET /api-docs/json
  * Endpoint para obtener la especificación OpenAPI en formato JSON
- * Útil para integración con otras herramientas de documentación
  */
 router.get('/json',
   publicEndpoint,
@@ -89,9 +102,8 @@ router.get('/json',
 );
 
 /**
- * GET /api-docs.yaml
+ * GET /api-docs/yaml
  * Endpoint para obtener la especificación OpenAPI en formato YAML
- * Útil para integración con herramientas que prefieren YAML
  */
 router.get('/yaml',
   publicEndpoint,
@@ -117,7 +129,6 @@ router.get('/yaml',
 /**
  * GET /api-docs/redoc
  * Endpoint alternativo con documentación en formato ReDoc
- * Proporciona una interfaz alternativa para visualizar la documentación
  */
 router.get('/redoc',
   publicEndpoint,
@@ -179,4 +190,3 @@ router.use('*', (req, res) => {
 });
 
 module.exports = router;
-

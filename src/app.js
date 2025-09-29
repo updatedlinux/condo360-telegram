@@ -18,7 +18,7 @@ const { testConnection, createHistoryTable } = require('./config/database');
 
 // Importar rutas
 const apiRoutes = require('./routes');
-const swaggerRoutes = require('./swagger/routes');
+const swaggerRoutes = require('./swagger/routes-cdn'); // Usar versión con CDN
 
 // Importar middlewares
 const { generalRateLimit } = require('./middleware/security');
@@ -114,6 +114,19 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+/**
+ * Configurar archivos estáticos para Swagger UI
+ */
+app.use('/api-docs', express.static('node_modules/swagger-ui-dist', {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (path.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    }
+  }
+}));
 
 /**
  * Configurar rutas
