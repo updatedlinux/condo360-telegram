@@ -29,6 +29,10 @@ const swaggerOptions = {
       {
         url: `https://${config.swagger.host}`,
         description: 'Servidor de producción'
+      },
+      {
+        url: 'https://api.bonaventurecclub.com/blog',
+        description: 'Servidor de producción Bonaventure'
       }
     ],
     components: {

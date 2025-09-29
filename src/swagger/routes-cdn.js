@@ -21,6 +21,21 @@ router.get('/',
     next();
   },
   (req, res) => {
+    // Detectar la URL base automáticamente
+    const protocol = req.get('X-Forwarded-Proto') || req.protocol;
+    const host = req.get('X-Forwarded-Host') || req.get('Host');
+    const baseUrl = `${protocol}://${host}`;
+    
+    logger.info('Generando Swagger UI', {
+      baseUrl,
+      originalUrl: req.originalUrl,
+      headers: {
+        'X-Forwarded-Proto': req.get('X-Forwarded-Proto'),
+        'X-Forwarded-Host': req.get('X-Forwarded-Host'),
+        'Host': req.get('Host')
+      }
+    });
+
     const swaggerHtml = `
       <!DOCTYPE html>
       <html lang="es">
@@ -53,8 +68,20 @@ router.get('/',
           <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-standalone-preset.js"></script>
           <script>
             window.onload = function() {
+              // Detectar la URL base del proxy reverso
+              const currentPath = window.location.pathname;
+              const basePath = currentPath.replace('/api-docs', '');
+              const specUrl = basePath + '/api-docs/json';
+              
+              console.log('Swagger UI Config:', {
+                currentPath: currentPath,
+                basePath: basePath,
+                specUrl: specUrl,
+                windowLocation: window.location.href
+              });
+              
               const ui = SwaggerUIBundle({
-                url: '/api-docs/json',
+                url: specUrl,
                 dom_id: '#swagger-ui',
                 deepLinking: true,
                 presets: [
@@ -71,8 +98,26 @@ router.get('/',
                 showExtensions: true,
                 showCommonExtensions: true,
                 tryItOutEnabled: true,
-                validatorUrl: null
+                validatorUrl: null,
+                // Configuración para proxy reverso
+                requestInterceptor: function(request) {
+                  console.log('Request interceptor:', request);
+                  // Asegurar que las URLs sean relativas al proxy
+                  if (request.url.startsWith('/')) {
+                    request.url = basePath + request.url;
+                  }
+                  return request;
+                },
+                responseInterceptor: function(response) {
+                  console.log('Response interceptor:', response);
+                  return response;
+                }
               });
+              
+              // Manejar errores de carga
+              ui.onComplete = function() {
+                console.log('Swagger UI loaded successfully');
+              };
             };
           </script>
         </body>
@@ -97,6 +142,10 @@ router.get('/json',
     });
 
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-API-KEY');
+    
     res.json(swaggerSpec);
   }
 );
@@ -122,6 +171,7 @@ router.get('/yaml',
     });
 
     res.setHeader('Content-Type', 'text/yaml');
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.send(yamlSpec);
   }
 );
