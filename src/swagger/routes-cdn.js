@@ -7,13 +7,13 @@ const router = express.Router();
 
 /**
  * GET /api-docs
- * Endpoint principal de documentación Swagger completamente local
- * No hace requests externos, todo está embebido localmente
+ * Documentación HTML pura SIN JavaScript - Versión 3.0
+ * Elimina completamente cualquier posibilidad de requests externos
  */
 router.get('/',
   publicEndpoint,
   (req, res, next) => {
-    logger.info('Acceso a documentación Swagger local', {
+    logger.info('Acceso a documentación HTML pura sin JS', {
       ip: req.ip,
       userAgent: req.get('User-Agent'),
       traceId: req.traceId
@@ -21,18 +21,23 @@ router.get('/',
     next();
   },
   (req, res) => {
+    // Headers para evitar cache del navegador
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Last-Modified', new Date().toUTCString());
+    
     // Detectar la URL base automáticamente
     const protocol = req.get('X-Forwarded-Proto') || req.protocol;
     const host = req.get('X-Forwarded-Host') || req.get('Host');
     const baseUrl = `${protocol}://${host}`;
     
-    logger.info('Generando Swagger UI local', {
+    logger.info('Generando documentación HTML pura sin JS', {
       baseUrl,
-      originalUrl: req.originalUrl
+      originalUrl: req.originalUrl,
+      version: '3.0',
+      timestamp: new Date().toISOString()
     });
-
-    // Especificación OpenAPI embebida directamente
-    const spec = JSON.stringify(swaggerSpec);
 
     const swaggerHtml = `
       <!DOCTYPE html>
@@ -40,39 +45,228 @@ router.get('/',
         <head>
           <meta charset="UTF-8">
           <title>Condo360 WordPress API - Documentación</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+          <meta http-equiv="Pragma" content="no-cache">
+          <meta http-equiv="Expires" content="0">
           <style>
-            html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
-            *, *:before, *:after { box-sizing: inherit; }
-            body { margin:0; background: #fafafa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+              background: #f8f9fa; 
+              color: #333; 
+              line-height: 1.6; 
+            }
             .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-            .header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-            .header h1 { margin: 0; font-size: 2em; }
-            .header p { margin: 10px 0 0 0; opacity: 0.9; }
-            .endpoint { background: white; border: 1px solid #e1e5e9; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
-            .endpoint-header { background: #f8f9fa; padding: 15px 20px; border-bottom: 1px solid #e1e5e9; }
-            .endpoint-method { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8em; margin-right: 10px; }
+            .header { 
+              background: linear-gradient(135deg, #2c3e50, #3498db); 
+              color: white; 
+              padding: 30px; 
+              border-radius: 12px; 
+              margin-bottom: 30px; 
+              text-align: center;
+            }
+            .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+            .header p { font-size: 1.2em; opacity: 0.9; }
+            .version { 
+              background: rgba(255,255,255,0.2); 
+              padding: 5px 15px; 
+              border-radius: 20px; 
+              display: inline-block; 
+              margin-top: 10px; 
+              font-size: 0.9em;
+            }
+            .endpoint { 
+              background: white; 
+              border: 1px solid #e1e5e9; 
+              border-radius: 12px; 
+              margin-bottom: 25px; 
+              overflow: hidden; 
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .endpoint-header { 
+              background: #f8f9fa; 
+              padding: 20px; 
+              border-bottom: 1px solid #e1e5e9; 
+              display: flex; 
+              align-items: center;
+            }
+            .endpoint-method { 
+              display: inline-block; 
+              padding: 6px 12px; 
+              border-radius: 6px; 
+              font-weight: bold; 
+              font-size: 0.85em; 
+              margin-right: 15px; 
+              min-width: 70px; 
+              text-align: center;
+            }
             .method-post { background: #28a745; color: white; }
             .method-get { background: #007bff; color: white; }
             .method-delete { background: #dc3545; color: white; }
-            .endpoint-path { font-family: monospace; font-size: 1.1em; }
-            .endpoint-description { padding: 20px; }
-            .endpoint-description h3 { margin-top: 0; color: #2c3e50; }
-            .parameters { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0; }
-            .parameter { margin-bottom: 10px; }
-            .parameter-name { font-weight: bold; font-family: monospace; }
-            .parameter-type { color: #6c757d; font-size: 0.9em; }
-            .response { background: #e8f5e8; padding: 15px; border-radius: 4px; margin: 15px 0; }
-            .response-code { font-weight: bold; color: #28a745; }
-            .example { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 15px 0; }
-            .example pre { margin: 0; overflow-x: auto; }
-            .example pre code { font-family: monospace; font-size: 0.9em; }
-            .server-info { background: #e3f2fd; padding: 15px; border-radius: 4px; margin: 20px 0; }
-            .server-info h3 { margin-top: 0; color: #1976d2; }
-            .server-list { list-style: none; padding: 0; }
-            .server-list li { padding: 5px 0; font-family: monospace; }
-            .try-button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1em; }
-            .try-button:hover { background: #0056b3; }
-            .footer { text-align: center; margin-top: 40px; padding: 20px; color: #6c757d; border-top: 1px solid #e1e5e9; }
+            .endpoint-path { 
+              font-family: 'Monaco', 'Menlo', monospace; 
+              font-size: 1.2em; 
+              font-weight: 600;
+            }
+            .endpoint-description { padding: 25px; }
+            .endpoint-description h3 { 
+              margin-bottom: 15px; 
+              color: #2c3e50; 
+              font-size: 1.3em;
+            }
+            .endpoint-description p { 
+              margin-bottom: 20px; 
+              color: #666; 
+              font-size: 1.05em;
+            }
+            .parameters { 
+              background: #f8f9fa; 
+              padding: 20px; 
+              border-radius: 8px; 
+              margin: 20px 0; 
+              border-left: 4px solid #007bff;
+            }
+            .parameters h4 { 
+              margin-bottom: 15px; 
+              color: #2c3e50; 
+              font-size: 1.1em;
+            }
+            .parameter { 
+              margin-bottom: 15px; 
+              padding-bottom: 10px; 
+              border-bottom: 1px solid #e9ecef;
+            }
+            .parameter:last-child { border-bottom: none; margin-bottom: 0; }
+            .parameter-name { 
+              font-weight: bold; 
+              font-family: 'Monaco', 'Menlo', monospace; 
+              color: #2c3e50;
+            }
+            .parameter-type { 
+              color: #6c757d; 
+              font-size: 0.9em; 
+              margin-left: 8px;
+            }
+            .response { 
+              background: #e8f5e8; 
+              padding: 20px; 
+              border-radius: 8px; 
+              margin: 20px 0; 
+              border-left: 4px solid #28a745;
+            }
+            .response-code { 
+              font-weight: bold; 
+              color: #28a745; 
+              font-size: 1.1em; 
+              margin-bottom: 10px;
+            }
+            .example { 
+              background: #f8f9fa; 
+              padding: 20px; 
+              border-radius: 8px; 
+              margin: 15px 0; 
+              border: 1px solid #e9ecef;
+            }
+            .example pre { 
+              margin: 0; 
+              overflow-x: auto; 
+              font-size: 0.9em;
+            }
+            .example pre code { 
+              font-family: 'Monaco', 'Menlo', monospace; 
+              color: #333;
+            }
+            .server-info { 
+              background: #e3f2fd; 
+              padding: 20px; 
+              border-radius: 8px; 
+              margin: 25px 0; 
+              border-left: 4px solid #1976d2;
+            }
+            .server-info h3 { 
+              margin-bottom: 15px; 
+              color: #1976d2; 
+              font-size: 1.2em;
+            }
+            .server-list { 
+              list-style: none; 
+              padding: 0; 
+            }
+            .server-list li { 
+              padding: 8px 0; 
+              font-family: 'Monaco', 'Menlo', monospace; 
+              background: rgba(255,255,255,0.5); 
+              margin: 5px 0; 
+              padding: 10px; 
+              border-radius: 4px;
+            }
+            .try-button { 
+              background: #007bff; 
+              color: white; 
+              border: none; 
+              padding: 12px 25px; 
+              border-radius: 6px; 
+              cursor: pointer; 
+              font-size: 1em; 
+              font-weight: 600;
+              transition: background 0.3s;
+              text-decoration: none;
+              display: inline-block;
+            }
+            .try-button:hover { 
+              background: #0056b3; 
+              transform: translateY(-1px);
+            }
+            .footer { 
+              text-align: center; 
+              margin-top: 50px; 
+              padding: 30px; 
+              color: #6c757d; 
+              border-top: 2px solid #e1e5e9; 
+              background: white;
+              border-radius: 8px;
+            }
+            .footer a { 
+              color: #007bff; 
+              text-decoration: none; 
+              font-weight: 600;
+            }
+            .footer a:hover { 
+              text-decoration: underline; 
+            }
+            .stats { 
+              display: grid; 
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+              gap: 20px; 
+              margin: 25px 0;
+            }
+            .stat-card { 
+              background: white; 
+              padding: 20px; 
+              border-radius: 8px; 
+              text-align: center; 
+              border: 1px solid #e9ecef;
+            }
+            .stat-number { 
+              font-size: 2em; 
+              font-weight: bold; 
+              color: #007bff; 
+              margin-bottom: 5px;
+            }
+            .stat-label { 
+              color: #6c757d; 
+              font-size: 0.9em;
+            }
+            .no-js-notice {
+              background: #fff3cd;
+              border: 1px solid #ffeaa7;
+              color: #856404;
+              padding: 15px;
+              border-radius: 8px;
+              margin: 20px 0;
+              text-align: center;
+            }
           </style>
         </head>
         <body>
@@ -80,11 +274,34 @@ router.get('/',
             <div class="header">
               <h1>${swaggerSpec.info.title}</h1>
               <p>${swaggerSpec.info.description}</p>
-              <p>Versión: ${swaggerSpec.info.version}</p>
+              <div class="version">Versión ${swaggerSpec.info.version} - HTML Puro Sin JavaScript</div>
+            </div>
+
+            <div class="no-js-notice">
+              <strong>✅ Documentación HTML Pura</strong> - Sin JavaScript, sin requests externos, sin problemas de CSP
+            </div>
+
+            <div class="stats">
+              <div class="stat-card">
+                <div class="stat-number">${Object.keys(swaggerSpec.paths).length}</div>
+                <div class="stat-label">Endpoints</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">${swaggerSpec.servers.length}</div>
+                <div class="stat-label">Servidores</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">${Object.keys(swaggerSpec.components.schemas).length}</div>
+                <div class="stat-label">Modelos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">${swaggerSpec.tags.length}</div>
+                <div class="stat-label">Categorías</div>
+              </div>
             </div>
 
             <div class="server-info">
-              <h3>Servidores Disponibles</h3>
+              <h3>🌐 Servidores Disponibles</h3>
               <ul class="server-list">
                 ${swaggerSpec.servers.map(server => `<li>${server.url} - ${server.description}</li>`).join('')}
               </ul>
@@ -96,11 +313,11 @@ router.get('/',
                 <span class="endpoint-path">/api/v1/docx/upload</span>
               </div>
               <div class="endpoint-description">
-                <h3>Subir archivo .docx y crear post en WordPress</h3>
+                <h3>📄 Subir archivo .docx y crear post en WordPress</h3>
                 <p>Procesa un archivo .docx, convierte su contenido a HTML preservando todos los estilos, extrae imágenes embebidas, las sube al Media Library de WordPress y crea un post con el contenido HTML resultante.</p>
                 
                 <div class="parameters">
-                  <h4>Parámetros</h4>
+                  <h4>📋 Parámetros</h4>
                   <div class="parameter">
                     <span class="parameter-name">file</span> <span class="parameter-type">(multipart/form-data, requerido)</span><br>
                     Archivo .docx a procesar
@@ -120,7 +337,7 @@ router.get('/',
                 </div>
 
                 <div class="response">
-                  <h4>Respuesta Exitosa (201)</h4>
+                  <h4>✅ Respuesta Exitosa (201)</h4>
                   <div class="response-code">200 - Archivo procesado y post creado exitosamente</div>
                   <div class="example">
                     <pre><code>{
@@ -141,7 +358,7 @@ router.get('/',
                   </div>
                 </div>
 
-                <button class="try-button" onclick="tryEndpoint('POST', '/api/v1/docx/upload')">Probar Endpoint</button>
+                <a href="${baseUrl}/api/v1/docx/upload" class="try-button" target="_blank">🚀 Probar Endpoint</a>
               </div>
             </div>
 
@@ -151,11 +368,11 @@ router.get('/',
                 <span class="endpoint-path">/api/v1/posts/{wp_post_id}</span>
               </div>
               <div class="endpoint-description">
-                <h3>Eliminar post de WordPress y opcionalmente sus medios asociados</h3>
+                <h3>🗑️ Eliminar post de WordPress y opcionalmente sus medios asociados</h3>
                 <p>Elimina un post de WordPress por su ID. Opcionalmente puede eliminar también todos los medios asociados (imágenes) que fueron subidos durante la creación del post.</p>
                 
                 <div class="parameters">
-                  <h4>Parámetros</h4>
+                  <h4>📋 Parámetros</h4>
                   <div class="parameter">
                     <span class="parameter-name">wp_post_id</span> <span class="parameter-type">(path, requerido)</span><br>
                     ID del post en WordPress a eliminar
@@ -167,7 +384,7 @@ router.get('/',
                 </div>
 
                 <div class="response">
-                  <h4>Respuesta Exitosa (200)</h4>
+                  <h4>✅ Respuesta Exitosa (200)</h4>
                   <div class="response-code">200 - Post eliminado exitosamente</div>
                   <div class="example">
                     <pre><code>{
@@ -188,7 +405,7 @@ router.get('/',
                   </div>
                 </div>
 
-                <button class="try-button" onclick="tryEndpoint('DELETE', '/api/v1/posts/456')">Probar Endpoint</button>
+                <a href="${baseUrl}/api/v1/posts/456" class="try-button" target="_blank">🚀 Probar Endpoint</a>
               </div>
             </div>
 
@@ -198,11 +415,11 @@ router.get('/',
                 <span class="endpoint-path">/api/v1/health</span>
               </div>
               <div class="endpoint-description">
-                <h3>Verificar estado de salud del sistema</h3>
+                <h3>🏥 Verificar estado de salud del sistema</h3>
                 <p>Verifica el estado de todas las dependencias del sistema incluyendo conexión a base de datos MySQL, conectividad con WordPress, estado de Redis y configuración de Telegram.</p>
                 
                 <div class="response">
-                  <h4>Respuesta Exitosa (200)</h4>
+                  <h4>✅ Respuesta Exitosa (200)</h4>
                   <div class="response-code">200 - Sistema funcionando correctamente</div>
                   <div class="example">
                     <pre><code>{
@@ -230,7 +447,7 @@ router.get('/',
                   </div>
                 </div>
 
-                <button class="try-button" onclick="tryEndpoint('GET', '/api/v1/health')">Probar Endpoint</button>
+                <a href="${baseUrl}/api/v1/health" class="try-button" target="_blank">🚀 Probar Endpoint</a>
               </div>
             </div>
 
@@ -240,11 +457,11 @@ router.get('/',
                 <span class="endpoint-path">/api/v1/posts/history</span>
               </div>
               <div class="endpoint-description">
-                <h3>Buscar registros del historial de procesamiento</h3>
+                <h3>📊 Buscar registros del historial de procesamiento</h3>
                 <p>Busca registros del historial de procesamiento aplicando filtros opcionales y paginación. Permite filtrar por usuario, estado, fechas y otros criterios.</p>
                 
                 <div class="parameters">
-                  <h4>Parámetros de Consulta</h4>
+                  <h4>📋 Parámetros de Consulta</h4>
                   <div class="parameter">
                     <span class="parameter-name">wp_post_id</span> <span class="parameter-type">(query, opcional)</span><br>
                     ID del post en WordPress
@@ -267,31 +484,16 @@ router.get('/',
                   </div>
                 </div>
 
-                <button class="try-button" onclick="tryEndpoint('GET', '/api/v1/posts/history')">Probar Endpoint</button>
+                <a href="${baseUrl}/api/v1/posts/history" class="try-button" target="_blank">🚀 Probar Endpoint</a>
               </div>
             </div>
 
             <div class="footer">
-              <p>Condo360 WordPress API - Documentación generada automáticamente</p>
-              <p>Para más información, consulta el <a href="/api-docs/json" target="_blank">especificación OpenAPI completa</a></p>
+              <p><strong>Condo360 WordPress API</strong> - Documentación HTML Pura v3.0</p>
+              <p>Para más información, consulta la <a href="/api-docs/json" target="_blank">especificación OpenAPI completa</a> o <a href="/api-docs/redoc" target="_blank">ReDoc</a></p>
+              <p>Generado automáticamente - Sin JavaScript, sin dependencias externas</p>
             </div>
           </div>
-
-          <script>
-            function tryEndpoint(method, path) {
-              const baseUrl = window.location.origin + window.location.pathname.replace('/api-docs', '');
-              const fullUrl = baseUrl + path;
-              
-              console.log('Probando endpoint:', method, fullUrl);
-              
-              if (method === 'GET') {
-                window.open(fullUrl, '_blank');
-              } else {
-                alert('Para probar endpoints POST/DELETE, usa una herramienta como Postman o curl:\\n\\n' + 
-                      'curl -X ' + method + ' "' + fullUrl + '"');
-              }
-            }
-          </script>
         </body>
       </html>
     `;
