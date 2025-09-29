@@ -1,10 +1,15 @@
 /**
  * Setup global para tests con Jest
- * Se ejecuta después de configurar el entorno de testing
+ * Configuración básica para testing
  */
 
 const path = require('path');
 const fs = require('fs');
+
+// Configurar variables de entorno para testing
+process.env.NODE_ENV = 'test';
+process.env.PORT = '6001';
+process.env.LOG_DIR = './tests/logs';
 
 // Crear directorios necesarios para testing
 const testDirs = [
@@ -20,19 +25,16 @@ testDirs.forEach(dir => {
 });
 
 // Configurar timeouts globales
-jest.setTimeout(30000);
+jest.setTimeout(10000);
 
-// Mock de console para evitar spam en tests
-const originalConsole = global.console;
-global.console = {
-  ...originalConsole,
-  // Mantener solo errores y warnings importantes
-  log: jest.fn(),
+// Mock de logger para evitar errores en tests
+jest.mock('../src/config/logger', () => ({
   info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
   debug: jest.fn(),
-  warn: originalConsole.warn,
-  error: originalConsole.error
-};
+  logWithTrace: jest.fn()
+}));
 
 // Limpiar mocks después de cada test
 afterEach(() => {
@@ -55,9 +57,6 @@ afterEach(() => {
 
 // Limpiar todo después de todos los tests
 afterAll(() => {
-  // Restaurar console original
-  global.console = originalConsole;
-  
   // Limpiar directorios de testing
   testDirs.forEach(dir => {
     if (fs.existsSync(dir)) {

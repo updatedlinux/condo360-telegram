@@ -2,7 +2,16 @@
  * Tests unitarios para DocxService
  */
 
+// Mock mammoth antes de importar el servicio
+jest.mock('mammoth', () => ({
+  convertToHtml: jest.fn(),
+  images: {
+    inline: jest.fn()
+  }
+}));
+
 const docxService = require('../../src/services/docxService');
+const mammoth = require('mammoth');
 const fs = require('fs');
 const path = require('path');
 
@@ -15,21 +24,18 @@ describe('DocxService', () => {
     sampleDocxBuffer = Buffer.from('PK\x03\x04\x14\x00\x00\x00\x08\x00', 'binary');
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('convertToHtml', () => {
     it('debería convertir un archivo .docx a HTML', async () => {
-      // Mock de mammoth para evitar dependencias externas
-      const mockMammoth = {
-        convertToHtml: jest.fn().mockResolvedValue({
-          value: '<p>Contenido de prueba</p>',
-          messages: []
-        }),
-        images: {
-          inline: jest.fn()
-        }
-      };
-
-      // Reemplazar mammoth con mock
-      jest.doMock('mammoth', () => mockMammoth);
+      // Configurar mock de mammoth
+      mammoth.convertToHtml.mockResolvedValue({
+        value: '<p>Contenido de prueba</p>',
+        messages: []
+      });
+      mammoth.images.inline.mockReturnValue([]);
 
       const result = await docxService.convertToHtml(sampleDocxBuffer);
 
@@ -38,18 +44,12 @@ describe('DocxService', () => {
       expect(result).toHaveProperty('metadata');
       expect(result.html).toBe('<p>Contenido de prueba</p>');
       expect(Array.isArray(result.images)).toBe(true);
+      expect(mammoth.convertToHtml).toHaveBeenCalledWith(sampleDocxBuffer, expect.any(Object));
     });
 
     it('debería manejar errores de conversión', async () => {
-      // Mock de mammoth que falla
-      const mockMammoth = {
-        convertToHtml: jest.fn().mockRejectedValue(new Error('Error de conversión')),
-        images: {
-          inline: jest.fn()
-        }
-      };
-
-      jest.doMock('mammoth', () => mockMammoth);
+      // Configurar mock de mammoth que falla
+      mammoth.convertToHtml.mockRejectedValue(new Error('Error de conversión'));
 
       await expect(docxService.convertToHtml(sampleDocxBuffer))
         .rejects

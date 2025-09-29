@@ -1,4 +1,5 @@
 require('dotenv').config();
+const mammoth = require('mammoth');
 
 /**
  * Configuración centralizada de la aplicación
@@ -54,6 +55,7 @@ const config = {
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN,
     webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET,
+    groupChatId: process.env.TELEGRAM_GROUP_CHAT_ID,
     enabled: !!(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_WEBHOOK_SECRET)
   },
 

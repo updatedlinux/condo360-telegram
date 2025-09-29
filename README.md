@@ -208,32 +208,58 @@ Verificación simple de salud para load balancers.
 
 ## 🤖 Configuración de Telegram Bot (Opcional)
 
-### 1. Crear Bot de Telegram
+### 1. Crear Bot y Obtener Token
 
-1. Habla con [@BotFather](https://t.me/botfather) en Telegram
-2. Ejecuta `/newbot`
-3. Sigue las instrucciones para crear tu bot
-4. Copia el token del bot
-5. Configura `TELEGRAM_BOT_TOKEN` en tu `.env`
+1. Habla con [@BotFather](https://t.me/BotFather) en Telegram
+2. Ejecuta `/newbot` y sigue las instrucciones
+3. Copia el **Bot Token** que te proporciona
+4. Agrega el bot a tu grupo de trabajo
 
-### 2. Configurar Webhook
+### 2. Obtener ID del Grupo
 
 ```bash
-curl -X POST "http://localhost:6000/api/v1/telegram/set-webhook" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "webhook_url": "https://tu-dominio.com/api/v1/telegram/webhook",
-    "secret_token": "tu_token_secreto",
-    "allowed_updates": ["message", "channel_post"]
-  }'
+# Ejecutar script para obtener el ID del grupo
+node scripts/get-chat-id.js
 ```
 
-### 3. Usar el Bot
+**Instrucciones:**
+1. Asegúrate de que tu bot esté en el grupo
+2. Ejecuta el script
+3. Envía cualquier mensaje al grupo
+4. Copia el ID que aparece (ejemplo: `-1001234567890`)
 
-- Envía un archivo .docx al bot
-- El bot procesará automáticamente el documento
-- Creará un post en WordPress como borrador
-- Te enviará el enlace del post creado
+### 3. Configurar Variables de Entorno
+
+```env
+# Configuración de Telegram
+TELEGRAM_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
+TELEGRAM_WEBHOOK_SECRET=tu_secreto_webhook_personalizado
+TELEGRAM_GROUP_CHAT_ID=-1001234567890
+```
+
+**Nota sobre `TELEGRAM_WEBHOOK_SECRET`:**
+- Es un **secreto personalizado** que tú defines
+- Debe ser una cadena segura y única
+- Se usa para validar que los webhooks vienen realmente de Telegram
+- Ejemplo: `condo360_webhook_secret_2024`
+
+### 4. Configurar Webhook
+
+```bash
+# Configurar webhook (reemplaza con tu dominio)
+WEBHOOK_URL=https://tu-dominio.com/api/v1/telegram/webhook
+node scripts/setup-telegram-webhook.js
+
+# Para eliminar el webhook (si es necesario)
+node scripts/setup-telegram-webhook.js delete
+```
+
+### 5. Usar el Bot
+
+- Envía un archivo `.docx` al grupo
+- El bot procesará automáticamente el archivo
+- Creará un post en WordPress
+- Enviará confirmación al grupo
 
 ## 🗄️ Base de Datos
 

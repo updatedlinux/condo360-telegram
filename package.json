@@ -10,6 +10,8 @@
     "test:watch": "jest --watch",
     "migrate-db": "node scripts/migrate-db.js",
     "create-table": "node scripts/create-table.js",
+    "get-chat-id": "node scripts/get-chat-id.js",
+    "setup-webhook": "node scripts/setup-telegram-webhook.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix"
   },
