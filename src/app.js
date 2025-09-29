@@ -18,7 +18,7 @@ const { testConnection, createHistoryTable } = require('./config/database');
 
 // Importar rutas
 const apiRoutes = require('./routes');
-const swaggerRoutes = require('./swagger/routes-cdn'); // Usar versión con CDN
+const swaggerRoutes = require('./swagger/routes-swagger'); // Usar Swagger UI real sin requests externos
 
 // Importar middlewares
 const { generalRateLimit } = require('./middleware/security');

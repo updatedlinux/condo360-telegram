@@ -34,12 +34,19 @@ router.get('/',
     // Detectar el prefijo del proxy reverso desde la URL original
     const originalUrl = req.originalUrl;
     const pathPrefix = originalUrl.replace('/api-docs', '');
-    const baseUrl = `${protocol}://${host}${pathPrefix}`;
+    
+    // Si no hay prefijo, usar el header X-Forwarded-Prefix si está disponible
+    const forwardedPrefix = req.get('X-Forwarded-Prefix') || '';
+    const finalPrefix = pathPrefix || forwardedPrefix;
+    
+    const baseUrl = `${protocol}://${host}${finalPrefix}`;
     
     logger.info('Generando documentación HTML pura sin JS', {
       baseUrl,
       originalUrl: req.originalUrl,
       pathPrefix,
+      forwardedPrefix,
+      finalPrefix,
       protocol,
       host,
       version: '3.0',
