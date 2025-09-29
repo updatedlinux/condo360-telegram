@@ -18,7 +18,7 @@ const { testConnection, createHistoryTable } = require('./config/database');
 
 // Importar rutas
 const apiRoutes = require('./routes');
-const swaggerRoutes = require('./swagger/routes-swagger'); // Usar Swagger UI real sin requests externos
+const swaggerRoutes = require('./swagger/routes-redoc'); // Usar ReDoc - Mucho más estable que Swagger UI
 
 // Importar middlewares
 const { generalRateLimit } = require('./middleware/security');
@@ -117,17 +117,17 @@ app.use((req, res, next) => {
 
 /**
  * Configurar archivos estáticos para Swagger UI
- * Habilitado para servir CSS y JS de Swagger UI correctamente
+ * COMENTADO: ReDoc no necesita archivos estáticos locales, usa CDN
  */
-app.use('/api-docs', express.static('node_modules/swagger-ui-dist', {
-  setHeaders: (res, path) => {
-    if (path.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css');
-    } else if (path.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    }
-  }
-}));
+// app.use('/api-docs', express.static('node_modules/swagger-ui-dist', {
+//   setHeaders: (res, path) => {
+//     if (path.endsWith('.css')) {
+//       res.setHeader('Content-Type', 'text/css');
+//     } else if (path.endsWith('.js')) {
+//       res.setHeader('Content-Type', 'application/javascript');
+//     }
+//   }
+// }));
 
 /**
  * Configurar rutas
