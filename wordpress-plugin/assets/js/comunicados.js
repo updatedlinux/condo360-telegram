@@ -105,7 +105,7 @@ jQuery(document).ready(function($) {
                 setTimeout(function() {
                     hideProgress();
                     if (response.success) {
-                        showSuccess(response.data.post_url);
+                        showSuccess(response.data);
                         form[0].reset();
                         filePreview.removeClass('show');
                     } else {
@@ -148,18 +148,18 @@ jQuery(document).ready(function($) {
         progressContainer.hide();
     }
     
-    function showSuccess(postUrl) {
+    function showSuccess(responseData) {
         // Crear overlay
         const overlay = $('<div class="condo360-overlay"></div>');
         $('body').append(overlay);
         
-        // Mostrar tooltip
+        // Mostrar tooltip con información de lotes
         successTooltip.show();
         
-        // Auto-cerrar después de 5 segundos
+        // Auto-cerrar después de 8 segundos (más tiempo para leer la info)
         setTimeout(function() {
             hideSuccess();
-        }, 5000);
+        }, 8000);
     }
     
     function hideSuccess() {

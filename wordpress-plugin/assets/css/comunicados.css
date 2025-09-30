@@ -274,6 +274,30 @@
     line-height: 1.5;
 }
 
+.condo360-batch-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 15px;
+    border-left: 4px solid #007cba;
+}
+
+.condo360-batch-info strong {
+    color: #007cba;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.condo360-batch-info p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.condo360-batch-info p:last-child {
+    margin-bottom: 0;
+}
+
 
 @keyframes condo360-fadeIn {
     from {

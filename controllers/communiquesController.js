@@ -2,6 +2,7 @@ const moment = require('moment-timezone');
 const { getAppConnection } = require('../config/database');
 const { WordPressService, FileProcessingService } = require('../services/wordpressService');
 const EmailService = require('../services/emailService');
+const EmailQueueService = require('../services/emailQueueService');
 
 /**
  * Controlador para gestión de comunicados
@@ -12,6 +13,7 @@ class CommuniquesController {
     this.wordpressService = new WordPressService();
     this.fileProcessingService = new FileProcessingService();
     this.emailService = new EmailService();
+    this.emailQueueService = new EmailQueueService();
     console.log('✅ CommuniquesController inicializado correctamente');
   }
 
@@ -124,18 +126,14 @@ class CommuniquesController {
 
         communiqueId = result.insertId;
 
-        // Enviar notificaciones por correo
-        console.log('📧 Iniciando envío de notificaciones...');
-        const notificationResult = await this.emailService.sendCommuniqueNotification({
-          id: communiqueId,
+        // Agregar a la cola de envío de correos
+        console.log('📧 Agregando comunicado a la cola de envío...');
+        await this.emailQueueService.queueCommunique({
+          communique_id: communiqueId,
           title,
           description,
           wp_post_url: wpPostData.url,
-          wp_post_id: wpPostData.id,
         });
-
-        // Registrar resultados de notificaciones en BD
-        await this.recordNotificationResults(communiqueId, notificationResult);
 
         // Limpiar archivo temporal
         await this.fileProcessingService.cleanupTempFile(fileInfo.path);
@@ -143,18 +141,22 @@ class CommuniquesController {
         console.log('✅ Comunicado procesado exitosamente:', {
           communiqueId,
           wpPostId: wpPostData.id,
-          notificationsSent: notificationResult.sent,
+          queuedForEmail: true,
         });
 
         res.json({
           success: true,
-          message: 'Comunicado subido y publicado exitosamente',
+          message: 'Comunicado subido y publicado exitosamente. Las notificaciones por correo se enviarán en lotes de 30 destinatarios cada 2 minutos.',
           data: {
             communique_id: communiqueId,
             wp_post_id: wpPostData.id,
             wp_post_url: wpPostData.url,
-            notifications_sent: notificationResult.sent,
-            notifications_failed: notificationResult.failed,
+            queued_for_email: true,
+            batch_info: {
+              batch_size: 30,
+              interval_minutes: 2,
+              message: 'Los correos se enviarán automáticamente en lotes para evitar sobrecarga del servidor SMTP'
+            },
             file_type: fileInfo.extension.substring(1),
             created_at: moment().tz('America/Caracas').format(),
           },

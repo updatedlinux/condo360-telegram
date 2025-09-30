@@ -35,6 +35,22 @@ CREATE TABLE IF NOT EXISTS `condo360_communiques_notifications` (
   INDEX `idx_sent_at` (`sent_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabla para cola de envío de correos
+CREATE TABLE IF NOT EXISTS `condo360_email_queue` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `communique_id` BIGINT NOT NULL,
+  `title` VARCHAR(255) NOT NULL,
+  `description` TEXT,
+  `wp_post_url` VARCHAR(500),
+  `status` ENUM('pending','processing','completed','failed') DEFAULT 'pending',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `processed_at` TIMESTAMP NULL,
+  `error_message` TEXT NULL,
+  FOREIGN KEY (`communique_id`) REFERENCES `condo360_communiques`(`id`) ON DELETE CASCADE,
+  INDEX `idx_status` (`status`),
+  INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tabla de configuración del sistema
 CREATE TABLE IF NOT EXISTS `condo360_settings` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,

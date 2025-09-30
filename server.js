@@ -10,6 +10,7 @@ require('dotenv').config();
 const communiquesRoutes = require('./routes/communiques');
 const { errorHandler } = require('./middleware/errorHandler');
 const { initializeDatabase } = require('./config/database');
+const EmailQueueService = require('./services/emailQueueService');
 
 const app = express();
 const PORT = process.env.PORT || 6000;
@@ -119,6 +120,11 @@ async function startServer() {
   try {
     await initializeDatabase();
     console.log('✅ Base de datos inicializada correctamente');
+    
+    // Inicializar procesador de cola de correos
+    const emailQueueService = new EmailQueueService();
+    emailQueueService.startQueueProcessor();
+    console.log('📧 Procesador de cola de correos iniciado');
     
     app.listen(PORT, () => {
       console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
