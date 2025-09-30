@@ -207,33 +207,52 @@ class CommuniquesController {
       const offset = (page - 1) * limit;
 
       const connection = await getAppConnection();
-      
-      // Construir query con filtros
-      let whereClause = '';
-      let queryParams = [];
+
+      // Obtener total de registros - usar query más simple
+      let countQuery;
+      let countParams;
       
       if (fileType && ['docx', 'pdf'].includes(fileType)) {
-        whereClause = 'WHERE file_type = ?';
-        queryParams.push(fileType);
+        countQuery = 'SELECT COUNT(*) as total FROM condo360_communiques WHERE file_type = ?';
+        countParams = [fileType];
+      } else {
+        countQuery = 'SELECT COUNT(*) as total FROM condo360_communiques';
+        countParams = [];
       }
-
-      // Obtener total de registros
-      const [countResult] = await connection.execute(
-        `SELECT COUNT(*) as total FROM condo360_communiques ${whereClause}`,
-        queryParams
-      );
+      
+      const [countResult] = await connection.execute(countQuery, countParams);
       const total = countResult[0].total;
 
-      // Obtener comunicados
-      const [communiques] = await connection.execute(
-        `SELECT id, wp_user_id, title, description, original_filename, file_type, 
+      // Obtener comunicados - usar query más simple
+      let selectQuery;
+      let selectParams;
+      
+      if (fileType && ['docx', 'pdf'].includes(fileType)) {
+        selectQuery = `SELECT id, wp_user_id, title, description, original_filename, file_type, 
                 wp_post_id, wp_post_url, created_at, updated_at
          FROM condo360_communiques 
-         ${whereClause}
+         WHERE file_type = ?
          ORDER BY created_at DESC 
-         LIMIT ? OFFSET ?`,
-        queryParams.concat([limit, offset])
-      );
+         LIMIT ? OFFSET ?`;
+        selectParams = [fileType, limit, offset];
+      } else {
+        selectQuery = `SELECT id, wp_user_id, title, description, original_filename, file_type, 
+                wp_post_id, wp_post_url, created_at, updated_at
+         FROM condo360_communiques 
+         ORDER BY created_at DESC 
+         LIMIT ? OFFSET ?`;
+        selectParams = [limit, offset];
+      }
+      
+      console.log('🔍 Debug SQL:', {
+        query: selectQuery,
+        params: selectParams,
+        limit,
+        offset,
+        fileType
+      });
+      
+      const [communiques] = await connection.execute(selectQuery, selectParams);
 
       const totalPages = Math.ceil(total / limit);
 
