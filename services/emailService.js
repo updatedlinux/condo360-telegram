@@ -146,6 +146,8 @@ class EmailService {
               max-width: ${logoWidth}px;
               max-height: ${logoHeight}px;
               object-fit: contain;
+              filter: brightness(0) invert(1);
+              -webkit-filter: brightness(0) invert(1);
             }
             .content {
               padding: 30px;
