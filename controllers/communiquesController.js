@@ -232,7 +232,7 @@ class CommuniquesController {
          ${whereClause}
          ORDER BY created_at DESC 
          LIMIT ? OFFSET ?`,
-        [...queryParams, limit, offset]
+        queryParams.concat([limit, offset])
       );
 
       const totalPages = Math.ceil(total / limit);

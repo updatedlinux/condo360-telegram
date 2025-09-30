@@ -14,6 +14,9 @@ const { initializeDatabase } = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 6000;
 
+// Configurar trust proxy para Nginx Proxy Manager
+app.set('trust proxy', true);
+
 // Configuración de Swagger
 const swaggerOptions = {
   definition: {
