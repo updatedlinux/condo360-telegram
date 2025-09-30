@@ -146,7 +146,7 @@ class CommuniquesController {
 
         res.json({
           success: true,
-          message: 'Comunicado subido y publicado exitosamente. Las notificaciones por correo se enviarán en lotes de 30 destinatarios cada 2 minutos.',
+          message: 'Comunicado subido y publicado exitosamente. Las notificaciones por correo se enviarán de forma progresiva.',
           data: {
             communique_id: communiqueId,
             wp_post_id: wpPostData.id,
@@ -155,7 +155,7 @@ class CommuniquesController {
             batch_info: {
               batch_size: 30,
               interval_minutes: 2,
-              message: 'Los correos se enviarán automáticamente en lotes para evitar sobrecarga del servidor SMTP'
+              message: 'Los correos se enviarán progresivamente en lotes para asegurar entrega confiable'
             },
             file_type: fileInfo.extension.substring(1),
             created_at: moment().tz('America/Caracas').format(),

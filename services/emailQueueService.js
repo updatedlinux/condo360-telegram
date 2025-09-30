@@ -329,14 +329,24 @@ class EmailQueueService {
       if (recipients.length === 0) {
         console.log('⚠️  No se encontraron destinatarios');
         await connection.execute(
-          'UPDATE condo360_email_queue SET status = ? WHERE id = ?',
-          ['failed', communique.id]
+          'UPDATE condo360_email_queue SET status = ?, error_message = ? WHERE id = ?',
+          ['failed', 'No se encontraron destinatarios', communique.id]
         );
         await connection.end();
         return;
       }
 
-      // Generar template HTML
+      console.log(`📧 ${recipients.length} destinatarios encontrados para envío en lotes`);
+
+      // Dividir destinatarios en lotes de máximo 30
+      const recipientBatches = [];
+      for (let i = 0; i < recipients.length; i += this.batchSize) {
+        recipientBatches.push(recipients.slice(i, i + this.batchSize));
+      }
+
+      console.log(`📧 ${recipients.length} destinatarios divididos en ${recipientBatches.length} lotes de máximo ${this.batchSize}`);
+
+      // Generar template HTML para este comunicado
       const htmlContent = await this.generateEmailTemplate(communique);
 
       // Preparar datos del correo
@@ -346,24 +356,17 @@ class EmailQueueService {
         html: htmlContent,
       };
 
-      // Dividir destinatarios en lotes
-      const batches = [];
-      for (let i = 0; i < recipients.length; i += this.batchSize) {
-        batches.push(recipients.slice(i, i + this.batchSize));
-      }
-
-      console.log(`📧 ${recipients.length} destinatarios divididos en ${batches.length} lotes de máximo ${this.batchSize}`);
-
-      // Procesar cada lote
+      // Procesar cada lote de destinatarios
       let totalSent = 0;
       let totalFailed = 0;
       const errors = [];
 
-      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-        const batch = batches[batchIndex];
-        console.log(`📧 Procesando lote ${batchIndex + 1}/${batches.length} (${batch.length} destinatarios)`);
+      for (let batchIndex = 0; batchIndex < recipientBatches.length; batchIndex++) {
+        const recipientBatch = recipientBatches[batchIndex];
+        console.log(`📧 Procesando lote ${batchIndex + 1}/${recipientBatches.length} (${recipientBatch.length} destinatarios)`);
 
-        for (const recipient of batch) {
+        // Enviar a cada destinatario del lote
+        for (const recipient of recipientBatch) {
           try {
             await this.transporter.sendMail({
               ...mailOptions,
@@ -398,13 +401,13 @@ class EmailQueueService {
         }
 
         // Esperar 2 minutos entre lotes (excepto en el último)
-        if (batchIndex < batches.length - 1) {
+        if (batchIndex < recipientBatches.length - 1) {
           console.log(`⏳ Esperando 2 minutos antes del siguiente lote...`);
           await new Promise(resolve => setTimeout(resolve, this.batchInterval));
         }
       }
 
-      // Actualizar estado del comunicado
+      // Marcar el comunicado como completado
       await connection.execute(
         'UPDATE condo360_email_queue SET status = ?, processed_at = NOW() WHERE id = ?',
         ['completed', communique.id]
@@ -416,6 +419,7 @@ class EmailQueueService {
       console.log(`  ✅ Enviados: ${totalSent}`);
       console.log(`  ❌ Fallidos: ${totalFailed}`);
       console.log(`  📧 Total destinatarios: ${recipients.length}`);
+      console.log(`  📄 Comunicado procesado: ${communique.title}`);
 
     } catch (error) {
       console.error('❌ Error en procesamiento de lote:', error);
