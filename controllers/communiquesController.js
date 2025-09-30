@@ -226,7 +226,7 @@ class CommuniquesController {
       const [countResult] = await connection.execute(countQuery, countParams);
       const total = countResult[0].total;
 
-      // Obtener comunicados - usar query más simple
+      // Obtener comunicados - usar query sin parámetros para LIMIT/OFFSET
       let selectQuery;
       let selectParams;
       
@@ -236,15 +236,15 @@ class CommuniquesController {
          FROM condo360_communiques 
          WHERE file_type = ?
          ORDER BY created_at DESC 
-         LIMIT ? OFFSET ?`;
-        selectParams = [fileType, limit, offset];
+         LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`;
+        selectParams = [fileType];
       } else {
         selectQuery = `SELECT id, wp_user_id, title, description, original_filename, file_type, 
                 wp_post_id, wp_post_url, created_at, updated_at
          FROM condo360_communiques 
          ORDER BY created_at DESC 
-         LIMIT ? OFFSET ?`;
-        selectParams = [limit, offset];
+         LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`;
+        selectParams = [];
       }
       
       console.log('🔍 Debug SQL:', {
@@ -252,7 +252,8 @@ class CommuniquesController {
         params: selectParams,
         limit,
         offset,
-        fileType
+        fileType,
+        paramTypes: selectParams.map(p => typeof p)
       });
       
       const [communiques] = await connection.execute(selectQuery, selectParams);
