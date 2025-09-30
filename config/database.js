@@ -8,7 +8,7 @@ const wpDbConfig = {
   password: process.env.WP_DB_PASS,
   database: process.env.WP_DB_NAME,
   charset: 'utf8mb4',
-  timezone: 'GMT-4',
+  timezone: '+00:00', // Usar UTC para evitar problemas de timezone
 };
 
 // Configuración de conexión a BD propia (puede ser la misma que WP)
@@ -19,7 +19,7 @@ const appDbConfig = {
   password: process.env.DB_PASS || process.env.WP_DB_PASS,
   database: process.env.DB_NAME || 'condo360_communiques',
   charset: 'utf8mb4',
-  timezone: 'GMT-4',
+  timezone: '+00:00', // Usar UTC para evitar problemas de timezone
 };
 
 let wpConnection = null;
@@ -44,40 +44,54 @@ async function getAppConnection() {
 // Función para inicializar la base de datos
 async function initializeDatabase() {
   try {
-    const connection = await getAppConnection();
-    
-    // Verificar que las tablas existen
-    const [tables] = await connection.execute(`
-      SELECT TABLE_NAME 
-      FROM information_schema.TABLES 
-      WHERE TABLE_SCHEMA = ? 
-      AND TABLE_NAME IN ('condo360_communiques', 'condo360_communiques_notifications', 'condo360_settings')
-    `, [appDbConfig.database]);
-    
-    if (tables.length < 3) {
-      console.log('⚠️  Algunas tablas no existen. Ejecute el script schema.sql para crearlas.');
+    // Solo verificar conexión en modo producción
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🔍 Verificando conexión a base de datos...');
+      
+      const connection = await getAppConnection();
+      
+      // Verificar que las tablas existen
+      const [tables] = await connection.execute(`
+        SELECT TABLE_NAME 
+        FROM information_schema.TABLES 
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME IN ('condo360_communiques', 'condo360_communiques_notifications', 'condo360_settings')
+      `, [appDbConfig.database]);
+      
+      if (tables.length < 3) {
+        console.log('⚠️  Algunas tablas no existen. Ejecute el script schema.sql para crearlas.');
+      } else {
+        console.log('✅ Todas las tablas de la aplicación están disponibles');
+      }
+      
+      // Verificar conexión a WordPress DB
+      const wpConn = await getWpConnection();
+      const [wpTables] = await wpConn.execute(`
+        SELECT TABLE_NAME 
+        FROM information_schema.TABLES 
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME IN ('wp_users', 'wp_usermeta')
+      `, [wpDbConfig.database]);
+      
+      if (wpTables.length < 2) {
+        console.log('⚠️  No se encontraron las tablas de WordPress. Verifique la configuración de WP_DB_*');
+      } else {
+        console.log('✅ Conexión a WordPress DB establecida correctamente');
+      }
     } else {
-      console.log('✅ Todas las tablas de la aplicación están disponibles');
-    }
-    
-    // Verificar conexión a WordPress DB
-    const wpConn = await getWpConnection();
-    const [wpTables] = await wpConn.execute(`
-      SELECT TABLE_NAME 
-      FROM information_schema.TABLES 
-      WHERE TABLE_SCHEMA = ? 
-      AND TABLE_NAME IN ('wp_users', 'wp_usermeta')
-    `, [wpDbConfig.database]);
-    
-    if (wpTables.length < 2) {
-      console.log('⚠️  No se encontraron las tablas de WordPress. Verifique la configuración de WP_DB_*');
-    } else {
-      console.log('✅ Conexión a WordPress DB establecida correctamente');
+      console.log('🔧 Modo desarrollo: Saltando verificación de base de datos');
+      console.log('⚠️  Configure las variables de entorno antes de usar en producción');
+      console.log('📝 Variables requeridas: WP_DB_*, SMTP_*, WP_REST_*');
     }
     
   } catch (error) {
-    console.error('❌ Error al inicializar la base de datos:', error.message);
-    throw error;
+    if (process.env.NODE_ENV === 'production') {
+      console.error('❌ Error al inicializar la base de datos:', error.message);
+      throw error;
+    } else {
+      console.log('⚠️  Error de conexión a base de datos (modo desarrollo):', error.message);
+      console.log('💡 Configure las variables de entorno en .env para conectar a la base de datos');
+    }
   }
 }
 

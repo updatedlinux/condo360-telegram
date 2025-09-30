@@ -3,6 +3,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const mammoth = require('mammoth');
 const pdfParse = require('pdf-parse');
+const FormData = require('form-data');
 
 /**
  * Servicio para interactuar con WordPress REST API
@@ -10,6 +11,20 @@ const pdfParse = require('pdf-parse');
 class WordPressService {
   constructor() {
     this.baseUrl = process.env.WP_BASE_URL || 'https://bonaventurecclub.com';
+    this.username = null;
+    this.password = null;
+    this.auth = null;
+    this.initialized = false;
+  }
+
+  /**
+   * Inicializar credenciales de WordPress
+   */
+  initializeCredentials() {
+    if (this.initialized) {
+      return;
+    }
+
     this.username = process.env.WP_REST_USER;
     this.password = process.env.WP_REST_APP_PASSWORD;
     
@@ -19,6 +34,7 @@ class WordPressService {
     
     // Configurar autenticación básica
     this.auth = Buffer.from(`${this.username}:${this.password}`).toString('base64');
+    this.initialized = true;
   }
 
   /**
@@ -26,10 +42,15 @@ class WordPressService {
    */
   async uploadMedia(filePath, filename, mimeType) {
     try {
+      this.initializeCredentials();
+      
       const fileBuffer = await fs.readFile(filePath);
       
       const formData = new FormData();
-      formData.append('file', new Blob([fileBuffer], { type: mimeType }), filename);
+      formData.append('file', fileBuffer, {
+        filename: filename,
+        contentType: mimeType
+      });
       
       const response = await axios.post(
         `${this.baseUrl}/wp-json/wp/v2/media`,
@@ -37,7 +58,7 @@ class WordPressService {
         {
           headers: {
             'Authorization': `Basic ${this.auth}`,
-            'Content-Type': 'multipart/form-data',
+            ...formData.getHeaders(),
           },
         }
       );
@@ -59,6 +80,8 @@ class WordPressService {
    */
   async createPost(postData) {
     try {
+      this.initializeCredentials();
+      
       const response = await axios.post(
         `${this.baseUrl}/wp-json/wp/v2/posts`,
         {
@@ -94,6 +117,8 @@ class WordPressService {
    */
   async getUserById(userId) {
     try {
+      this.initializeCredentials();
+      
       const response = await axios.get(
         `${this.baseUrl}/wp-json/wp/v2/users/${userId}`,
         {

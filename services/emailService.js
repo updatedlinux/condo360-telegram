@@ -8,15 +8,24 @@ const { getWpUsers, getSetting } = require('../config/database');
 class EmailService {
   constructor() {
     this.transporter = null;
-    this.initializeTransporter();
+    this.initialized = false;
   }
 
   /**
    * Inicializar el transporter de nodemailer
    */
-  initializeTransporter() {
+  async initializeTransporter() {
+    if (this.initialized) {
+      return;
+    }
+
     try {
-      this.transporter = nodemailer.createTransporter({
+      // Verificar que las variables de entorno estén disponibles
+      if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+        throw new Error('Variables de entorno SMTP no configuradas');
+      }
+
+      this.transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT) || 587,
         secure: false, // true para puerto 465, false para otros puertos
@@ -29,6 +38,7 @@ class EmailService {
         },
       });
 
+      this.initialized = true;
       console.log('✅ Servicio de correo inicializado');
     } catch (error) {
       console.error('❌ Error al inicializar servicio de correo:', error);
@@ -41,6 +51,7 @@ class EmailService {
    */
   async verifyConnection() {
     try {
+      await this.initializeTransporter();
       await this.transporter.verify();
       console.log('✅ Conexión SMTP verificada');
       return true;
@@ -227,6 +238,9 @@ class EmailService {
     try {
       console.log('📧 Iniciando envío de notificaciones...');
       
+      // Inicializar transporter
+      await this.initializeTransporter();
+      
       // Verificar conexión SMTP
       const isConnected = await this.verifyConnection();
       if (!isConnected) {
@@ -297,6 +311,8 @@ class EmailService {
    */
   async sendTestEmail(testEmail) {
     try {
+      await this.initializeTransporter();
+      
       const mailOptions = {
         from: process.env.MAIL_FROM || 'comunicados@bonaventurecclub.com',
         to: testEmail,
