@@ -25,12 +25,12 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${PORT}`,
-        description: 'Servidor de desarrollo',
-      },
-      {
         url: 'https://blogapi.bonaventurecclub.com',
         description: 'Servidor de producción',
+      },
+      {
+        url: `http://localhost:${PORT}`,
+        description: 'Servidor de desarrollo',
       },
     ],
   },
@@ -52,12 +52,23 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS abierto (como se solicitó)
+// CORS completamente abierto (como se solicitó)
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  credentials: false,
+  preflightContinue: false,
+  optionsSuccessStatus: 200
 }));
+
+// Manejar solicitudes OPTIONS (preflight) manualmente
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+  res.sendStatus(200);
+});
 
 // Middleware para parsing
 app.use(express.json({ limit: '50mb' }));

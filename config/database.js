@@ -11,13 +11,13 @@ const wpDbConfig = {
   timezone: '+00:00', // Usar UTC para evitar problemas de timezone
 };
 
-// Configuración de conexión a BD propia (puede ser la misma que WP)
+// Configuración de conexión a BD propia (por defecto usa la misma que WP)
 const appDbConfig = {
   host: process.env.DB_HOST || process.env.WP_DB_HOST || 'localhost',
   port: process.env.DB_PORT || process.env.WP_DB_PORT || 3306,
   user: process.env.DB_USER || process.env.WP_DB_USER,
   password: process.env.DB_PASS || process.env.WP_DB_PASS,
-  database: process.env.DB_NAME || 'condo360_communiques',
+  database: process.env.DB_NAME || process.env.WP_DB_NAME || 'wordpress',
   charset: 'utf8mb4',
   timezone: '+00:00', // Usar UTC para evitar problemas de timezone
 };
