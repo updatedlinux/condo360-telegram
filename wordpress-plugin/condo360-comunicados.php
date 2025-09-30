@@ -141,7 +141,6 @@ class Condo360Comunicados {
                     <div class="condo360-tooltip-text">
                         <strong>¡Comunicado enviado exitosamente!</strong>
                         <p>El comunicado se ha publicado en el blog y se han enviado las notificaciones por correo.</p>
-                        <a href="#" id="condo360-post-link" class="condo360-post-link" target="_blank">Ver comunicado publicado</a>
                     </div>
                 </div>
             </div>

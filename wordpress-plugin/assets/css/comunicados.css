@@ -274,21 +274,6 @@
     line-height: 1.5;
 }
 
-.condo360-post-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background: #007cba;
-    color: white;
-    text-decoration: none;
-    border-radius: 6px;
-    font-weight: 500;
-    transition: background 0.3s ease;
-}
-
-.condo360-post-link:hover {
-    background: #005a87;
-    color: white;
-}
 
 @keyframes condo360-fadeIn {
     from {

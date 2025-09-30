@@ -153,9 +153,6 @@ jQuery(document).ready(function($) {
         const overlay = $('<div class="condo360-overlay"></div>');
         $('body').append(overlay);
         
-        // Configurar enlace del post
-        $('#condo360-post-link').attr('href', postUrl);
-        
         // Mostrar tooltip
         successTooltip.show();
         
