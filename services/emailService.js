@@ -135,16 +135,15 @@ class EmailService {
               overflow: hidden;
             }
             .header {
-              background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+              background-color: #ffffff;
               padding: 30px 20px;
               text-align: center;
+              border-bottom: 3px solid #007cba;
             }
             .logo {
               max-width: ${logoWidth}px;
               max-height: ${logoHeight}px;
               height: auto;
-              filter: brightness(0) invert(1);
-              -webkit-filter: brightness(0) invert(1);
             }
             .content {
               padding: 30px;
