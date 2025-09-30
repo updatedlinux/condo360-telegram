@@ -105,9 +105,10 @@ class EmailService {
    */
   async generateEmailTemplate(communiqueData) {
     try {
-      const logoUrl = await getSetting('email_template_logo_url', 'https://bonaventurecclub.com/wp-content/uploads/2025/09/2.png');
-      const logoWidth = await getSetting('email_template_logo_width', '281');
-      const logoHeight = await getSetting('email_template_logo_height', '94');
+      // Usar valores directos sin depender de getSetting
+      const logoUrl = 'https://bonaventurecclub.com/wp-content/uploads/2025/09/2.png';
+      const logoWidth = 281;
+      const logoHeight = 94;
       
       const currentDate = moment().tz('America/Caracas').format('dddd, D [de] MMMM [de] YYYY [a las] h:mm A');
       
