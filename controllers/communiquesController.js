@@ -8,9 +8,11 @@ const EmailService = require('../services/emailService');
  */
 class CommuniquesController {
   constructor() {
+    console.log('🔧 Inicializando CommuniquesController...');
     this.wordpressService = new WordPressService();
     this.fileProcessingService = new FileProcessingService();
     this.emailService = new EmailService();
+    console.log('✅ CommuniquesController inicializado correctamente');
   }
 
   /**
@@ -18,6 +20,12 @@ class CommuniquesController {
    */
   async uploadCommunique(req, res, next) {
     try {
+      console.log('🔍 Verificando servicios en uploadCommunique:', {
+        hasWordpressService: !!this.wordpressService,
+        hasFileProcessingService: !!this.fileProcessingService,
+        hasEmailService: !!this.emailService
+      });
+      
       const { title, description, wp_user_id, user_display_name } = req.body;
       const fileInfo = req.fileInfo;
       
@@ -154,7 +162,13 @@ class CommuniquesController {
 
       } catch (error) {
         // Limpiar archivo temporal en caso de error
-        await this.fileProcessingService.cleanupTempFile(fileInfo.path);
+        if (fileInfo && fileInfo.path) {
+          try {
+            await this.fileProcessingService.cleanupTempFile(fileInfo.path);
+          } catch (cleanupError) {
+            console.error('⚠️  Error al limpiar archivo temporal:', cleanupError.message);
+          }
+        }
         throw error;
       }
 
@@ -396,4 +410,21 @@ class CommuniquesController {
   }
 }
 
-module.exports = new CommuniquesController();
+module.exports = {
+  uploadCommunique: async (req, res, next) => {
+    const controller = new CommuniquesController();
+    return controller.uploadCommunique(req, res, next);
+  },
+  getCommuniques: async (req, res, next) => {
+    const controller = new CommuniquesController();
+    return controller.getCommuniques(req, res, next);
+  },
+  getCommuniqueById: async (req, res, next) => {
+    const controller = new CommuniquesController();
+    return controller.getCommuniqueById(req, res, next);
+  },
+  getCommuniquesStats: async (req, res, next) => {
+    const controller = new CommuniquesController();
+    return controller.getCommuniquesStats(req, res, next);
+  }
+};
