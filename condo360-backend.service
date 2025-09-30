@@ -1,0 +1,34 @@
+[Unit]
+Description=Sistema de Comunicados Condo360 Backend
+Documentation=https://github.com/condo360/comunicados-backend
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/condo360-telegram
+Environment=NODE_ENV=production
+Environment=PORT=6000
+ExecStart=/usr/bin/node server.js
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=condo360-backend
+
+# Configuración de seguridad
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/condo360-telegram/temp /opt/condo360-telegram/logs
+
+# Límites de recursos
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
