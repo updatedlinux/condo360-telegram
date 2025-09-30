@@ -28,14 +28,19 @@ class EmailService {
       this.transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT) || 587,
-        secure: false, // true para puerto 465, false para otros puertos
+        secure: process.env.SMTP_SECURE === 'true' || parseInt(process.env.SMTP_PORT) === 465, // SSL/TLS
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
         },
         tls: {
-          rejectUnauthorized: false, // Para desarrollo, en producción debería ser true
+          rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false', // SSL/TLS seguro
+          ciphers: 'SSLv3',
         },
+        requireTLS: true, // Forzar TLS
+        connectionTimeout: 60000, // 60 segundos
+        greetingTimeout: 30000, // 30 segundos
+        socketTimeout: 60000, // 60 segundos
       });
 
       this.initialized = true;
@@ -69,16 +74,25 @@ class EmailService {
       const roleFilter = await getSetting('notification_role_filter', 'subscriber');
       const users = await getWpUsers(roleFilter);
       
-      // Filtrar usuarios con email válido
+      // Filtrar usuarios con email válido y dominios conocidos
+      const validDomains = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 'bonaventurecclub.com'];
+      
       const recipients = users
-        .filter(user => user.user_email && user.user_email.includes('@'))
+        .filter(user => {
+          if (!user.user_email || !user.user_email.includes('@')) {
+            return false;
+          }
+          
+          const domain = user.user_email.split('@')[1];
+          return validDomains.includes(domain.toLowerCase());
+        })
         .map(user => ({
           email: user.user_email,
           name: user.display_name || user.user_login,
           id: user.ID,
         }));
 
-      console.log(`📧 ${recipients.length} destinatarios encontrados`);
+      console.log(`📧 ${recipients.length} destinatarios válidos encontrados (de ${users.length} total)`);
       return recipients;
     } catch (error) {
       console.error('❌ Error al obtener destinatarios:', error);
@@ -237,6 +251,17 @@ class EmailService {
   async sendCommuniqueNotification(communiqueData) {
     try {
       console.log('📧 Iniciando envío de notificaciones...');
+      
+      // Verificar si está en modo de prueba
+      if (process.env.NODE_ENV === 'development' || process.env.SMTP_TEST_MODE === 'true') {
+        console.log('🧪 Modo de prueba: Simulando envío de notificaciones');
+        return {
+          sent: 0,
+          failed: 0,
+          errors: ['Modo de prueba activado'],
+          total: 0,
+        };
+      }
       
       // Inicializar transporter
       await this.initializeTransporter();
