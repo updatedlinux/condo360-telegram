@@ -140,11 +140,11 @@ class Condo360Comunicados {
                     <div class="condo360-tooltip-icon">✓</div>
                     <div class="condo360-tooltip-text">
                         <strong>¡Comunicado enviado exitosamente!</strong>
-                        <p>El comunicado se ha publicado en el blog.</p>
+                        <p>✅ El comunicado se ha publicado en el blog.</p>
                         <div class="condo360-batch-info">
-                            <strong>📧 Envío de notificaciones:</strong>
-                            <p>Las notificaciones por correo se enviarán <strong>de forma progresiva</strong> en lotes de 30 destinatarios cada 2 minutos.</p>
-                            <p><em>Esto asegura una entrega confiable a todos los propietarios sin sobrecargar el servidor SMTP.</em></p>
+                            <strong>📧 Notificaciones vía correo:</strong>
+                            <p>Se enviarán <strong>en lotes progresivamente</strong> a todos los propietarios.</p>
+                            <p><em>Esto asegura una entrega confiable sin sobrecargar el servidor SMTP.</em></p>
                         </div>
                     </div>
                 </div>

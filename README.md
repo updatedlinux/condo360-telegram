@@ -7,7 +7,8 @@ Sistema completo para que la Junta de Condominio pueda subir comunicados (archiv
 - **Backend Node.js + Express** corriendo en puerto 6000
 - **Plugin WordPress** con shortcode `[junta_comunicados]`
 - **Procesamiento automático** de archivos .docx y .pdf
-- **Notificaciones por correo** a todos los propietarios
+- **Sistema de cola inteligente** para notificaciones por correo
+- **Envío en lotes progresivos** (máximo 30 destinatarios cada 2 minutos)
 - **Integración con WordPress REST API** usando Application Password
 - **Documentación Swagger UI** disponible en `/api-docs`
 - **Interfaz responsive** compatible con tema Astra
@@ -25,10 +26,63 @@ Sistema completo para que la Junta de Condominio pueda subir comunicados (archiv
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Shortcode     │    │   WP REST API   │    │   Notificaciones│
-│   [junta_       │    │   + SMTP        │    │   por Correo    │
-│   comunicados]  │    │                 │    │                 │
+│   Shortcode     │    │   WP REST API   │    │   Sistema de     │
+│   [junta_       │    │   + Worker      │    │   Cola de        │
+│   comunicados]  │    │   de Correos    │    │   Correos        │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                       │
+                                │                       │
+                                ▼                       ▼
+                       ┌─────────────────┐    ┌─────────────────┐
+                       │   Envío en      │    │   Notificaciones│
+                       │   Lotes (30     │    │   Progresivas   │
+                       │   cada 2 min)   │    │   por SMTP      │
+                       └─────────────────┘    └─────────────────┘
+```
+
+## 📧 Sistema de Cola de Correos
+
+### Características del Sistema de Cola
+
+El sistema implementa un **worker automático** que procesa las notificaciones por correo de manera inteligente:
+
+- **Procesamiento asíncrono**: Los comunicados se publican inmediatamente, las notificaciones se procesan en segundo plano
+- **Envío en lotes**: Máximo 30 destinatarios por lote cada 2 minutos
+- **Escalabilidad**: Maneja 300+ destinatarios sin sobrecargar el servidor SMTP
+- **Confiabilidad**: Sistema de reintentos y manejo de errores
+- **Transparencia**: El usuario recibe feedback inmediato sobre el estado
+
+### Flujo del Sistema de Cola
+
+1. **Usuario sube comunicado** → Se publica inmediatamente en WordPress
+2. **Comunicado se agrega a la cola** → Estado "pending" en `condo360_email_queue`
+3. **Worker procesa automáticamente** → Cada 2 minutos verifica comunicados pendientes
+4. **Envío en lotes progresivos** → 30 destinatarios por lote con intervalo de 2 minutos
+5. **Registro de resultados** → Cada envío se registra en `condo360_communiques_notifications`
+6. **Actualización de estado** → Comunicado marcado como "completed" o "failed"
+
+### Tablas de Base de Datos
+
+```sql
+-- Cola de comunicados pendientes
+condo360_email_queue:
+- id, communique_id, title, description, wp_post_url
+- status (pending/processing/completed/failed)
+- created_at, processed_at, error_message
+
+-- Registro de notificaciones enviadas
+condo360_communiques_notifications:
+- id, communique_id, email, status (sent/error)
+- message, sent_at, created_at
+```
+
+### Configuración del Worker
+
+El worker se inicia automáticamente con el servidor y puede configurarse mediante variables de entorno:
+
+```env
+# Configuración del sistema de cola
+SMTP_TEST_MODE=false  # true para simular envíos en desarrollo
 ```
 
 ## 🚀 Instalación y Configuración
@@ -105,9 +159,15 @@ DB_NAME=condo360_communiques
 #### Crear Base de Datos
 
 ```bash
-# Ejecutar script SQL para crear tablas
+# Ejecutar script SQL para crear tablas (incluye sistema de cola)
 mysql -u root -p < database/schema.sql
 ```
+
+**Tablas creadas:**
+- `condo360_communiques` - Registro de comunicados
+- `condo360_communiques_notifications` - Registro de notificaciones enviadas
+- `condo360_email_queue` - Cola de comunicados pendientes de envío
+- `condo360_settings` - Configuraciones del sistema
 
 #### Iniciar el Servidor
 
@@ -195,8 +255,9 @@ Configurar según las especificaciones del proveedor SMTP.
    - **DOCX**: Conversión a HTML con imágenes embebidas
    - **PDF**: Subida como media con iframe embebido
 4. **Publicación**: Post creado en WordPress via REST API
-5. **Notificación**: Emails enviados a todos los propietarios
-6. **Registro**: Datos guardados en base de datos propia
+5. **Cola de Notificaciones**: Comunicado agregado a cola de envío automático
+6. **Envío Progresivo**: Worker envía notificaciones en lotes de 30 cada 2 minutos
+7. **Registro**: Datos guardados en base de datos propia
 
 ## 🔧 API Endpoints
 
@@ -212,6 +273,27 @@ title: "Título del comunicado"
 description: "Descripción opcional"
 wp_user_id: 123
 user_display_name: "Nombre del usuario"
+```
+
+**Respuesta exitosa:**
+```json
+{
+  "success": true,
+  "message": "Comunicado subido y publicado exitosamente. Las notificaciones por correo se enviarán de forma progresiva.",
+  "data": {
+    "communique_id": 123,
+    "wp_post_id": 456,
+    "wp_post_url": "https://bonaventurecclub.com/comunicado-123",
+    "queued_for_email": true,
+    "batch_info": {
+      "batch_size": 30,
+      "interval_minutes": 2,
+      "message": "Los correos se enviarán progresivamente en lotes para asegurar entrega confiable"
+    },
+    "file_type": "docx",
+    "created_at": "2025-01-30T18:30:00-04:00"
+  }
+}
 ```
 
 #### Listar Comunicados
@@ -265,6 +347,19 @@ GET /api-docs
 - message (TEXT)
 - sent_at (TIMESTAMP)
 - created_at (TIMESTAMP)
+```
+
+### Tabla: `condo360_email_queue`
+```sql
+- id (BIGINT, AUTO_INCREMENT, PRIMARY KEY)
+- communique_id (BIGINT, FOREIGN KEY)
+- title (VARCHAR(255))
+- description (TEXT)
+- wp_post_url (VARCHAR(500))
+- status (ENUM('pending', 'processing', 'completed', 'failed'))
+- created_at (TIMESTAMP)
+- processed_at (TIMESTAMP)
+- error_message (TEXT)
 ```
 
 ### Tabla: `condo360_settings`
