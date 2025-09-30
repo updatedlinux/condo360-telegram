@@ -45,15 +45,15 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 // Middleware de seguridad
 app.use(helmet());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 requests por IP por ventana
-  message: {
-    error: 'Demasiadas solicitudes desde esta IP, intente de nuevo más tarde.',
-  },
-});
-app.use(limiter);
+// Rate limiting - temporalmente deshabilitado para evitar problemas con trust proxy
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutos
+//   max: 100, // máximo 100 requests por IP por ventana
+//   message: {
+//     error: 'Demasiadas solicitudes desde esta IP, intente de nuevo más tarde.',
+//   },
+// });
+// app.use(limiter);
 
 // CORS completamente abierto (como se solicitó)
 app.use(cors({

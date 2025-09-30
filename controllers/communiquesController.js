@@ -206,6 +206,9 @@ class CommuniquesController {
       const fileType = req.query.file_type;
       const offset = (page - 1) * limit;
 
+      console.log('🔍 Versión del código:', 'v1.1 - Consulta SQL simplificada');
+      console.log('🔍 Parámetros recibidos:', { page, limit, fileType, offset });
+
       const connection = await getAppConnection();
 
       // Obtener total de registros - usar query más simple
