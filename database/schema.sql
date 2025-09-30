@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `condo360_settings` (
 
 -- Insertar configuraciones por defecto
 INSERT INTO `condo360_settings` (`setting_key`, `setting_value`, `description`) VALUES
-('email_template_logo_url', 'https://bonaventurecclub.com/wp-content/uploads/2025/09/cropped-1.png', 'URL del logo para emails'),
+('email_template_logo_url', 'https://bonaventurecclub.com/wp-content/uploads/2025/09/2.png', 'URL del logo para emails'),
 ('email_template_logo_width', '281', 'Ancho del logo en emails'),
 ('email_template_logo_height', '94', 'Alto del logo en emails'),
 ('notification_role_filter', 'subscriber', 'Rol de usuarios a notificar'),
